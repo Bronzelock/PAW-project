@@ -1,0 +1,33 @@
+
+{
+    "collections": {
+        "users": {
+            "_id": "ObjectId('651a2b3c4d5e6f7a8b9c0001')",
+            "email": "inżynier@example.com",
+            "passwordHash": "$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjIQqiRQYq",
+            "createdAt": {
+                "$date": "2026-07-02T18:00:00.000Z"
+            }
+        },
+        "models":{
+            "_id": "ObjectId('651a2b3c4d5e6f7a8b9c0d1e')",
+            "title": "Uchwyt na słuchawki - biurkowy",
+            "description": "Uniwersalny uchwyt montowany pod blatem, łatwy w druku bez podpór.",
+            "fileUrl": "https://res.cloudinary.com/twoja_nazwa/image/upload/v1/models/uchwyt_sluchawki.stl",
+            "userId": "ObjectId('651a2b3c4d5e6f7a8b9c0001')", 
+            "status": "analyzed",
+            "metadata": {
+                "dimensions": {
+                "x": 45.5,
+                "y": 120.0,
+                "z": 80.2
+                },
+                "isManifold": true,
+                "volume_cm3": 35.4
+            },
+            "createdAt": {
+                "$date": "2026-07-02T18:05:00.000Z"
+            }
+        }
+    }
+}
