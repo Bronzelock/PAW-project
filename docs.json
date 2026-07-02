@@ -1,0 +1,181 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Vault - Platforma Modeli 3D",
+    "description": "API do zarządzania katalogiem modeli 3D oraz uwierzytelniania użytkowników.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Serwer lokalny"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Rejestracja nowego użytkownika",
+        "tags": ["Uwierzytelnianie"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "user@example.com" },
+                  "password": { "type": "string", "example": "MojeBezpieczneHaslo123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Użytkownik został pomyślnie zarejestrowany" },
+          "400": { "description": "Niepoprawne dane wejściowe (np. email już istnieje)" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Logowanie użytkownika i pobranie tokenu JWT",
+        "tags": ["Uwierzytelnianie"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "user@example.com" },
+                  "password": { "type": "string", "example": "MojeBezpieczneHaslo123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zalogowano pomyślnie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Błędny login lub hasło" }
+        }
+      }
+    },
+    "/models": {
+      "get": {
+        "summary": "Pobieranie listy modeli z opcjonalnym filtrowaniem",
+        "tags": ["Modele 3D"],
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "description": "Wyszukiwanie modeli po tytule",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista modeli została pobrana",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Model3D" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Dodawanie nowego modelu (Wymaga tokenu)",
+        "tags": ["Modele 3D"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "description", "fileUrl"],
+                "properties": {
+                  "title": { "type": "string", "example": "Zębatka drukarki" },
+                  "description": { "type": "string", "example": "Część zamienna do drukarki Ender 3." },
+                  "fileUrl": { "type": "string", "example": "https://cloudinary.com/files/zebatka.stl" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Model dodany pomyślnie",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Model3D" }
+              }
+            }
+          },
+          "401": { "description": "Brak tokenu JWT lub token niepoprawny" }
+        }
+      }
+    },
+    "/models/{id}": {
+      "delete": {
+        "summary": "Usuwanie modelu o podanym ID (Wymaga tokenu)",
+        "tags": ["Modele 3D"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Unikalny identyfikator modelu w MongoDB",
+            "schema": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0d1e" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Model został usunięty" },
+          "401": { "description": "Brak autoryzacji" },
+          "404": { "description": "Nie znaleziono modelu o podanym ID" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Model3D": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0d1e" },
+          "title": { "type": "string", "example": "Zębatka drukarki" },
+          "description": { "type": "string", "example": "Część zamienna do drukarki Ender 3." },
+          "fileUrl": { "type": "string", "example": "https://cloudinary.com/files/zebatka.stl" },
+          "userId": { "type": "string", "example": "6519999c4d5e6f7a8b9c0d1e" },
+          "createdAt": { "type": "string", "format": "date-time", "example": "2026-03-30T12:34:56.789Z" }
+        }
+      }
+    }
+  }
+}
