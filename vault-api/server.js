@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 
 app.get('/api/v1/health', (req, res) => {
-    res.status(200).json({ status: 'ok', message: 'Vault server is working correctly!' });
+    res.status(200).json({ status: 'ok', message: 'Vault server is running correctly!' });
 });
 
 const PORT = process.env.PORT || 3000;

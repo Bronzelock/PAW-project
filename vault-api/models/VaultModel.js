@@ -1,0 +1,40 @@
+const mongoose = require('mongoose');
+
+const vaultModelSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true
+    },
+    fileUrl: {
+        type: String,
+        required: true
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'analyzed', 'error'],
+        default: 'pending'
+    },
+    metadata: {
+        dimensions: {
+            x: { type: Number },
+            y: { type: Number },
+            z: { type: Number }
+        },
+        isManifold: { type: Boolean },
+        volume_cm3: { type: Number }
+    }
+}, {
+    timestamps: true
+});
+
+module.exports = mongoose.model('VaultModel', vaultModelSchema);
