@@ -2,12 +2,14 @@ const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoute');
+const vaultModelsRoutes = require('./routes/vaultModelRoute');
 
 const app = express();
 
 app.use(express.json());
 
 app.use('/auth', authRoutes);
+app.use('/models', vaultModelsRoutes)
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Vault server is running correctly!' });
