@@ -1,17 +1,23 @@
 const VaultModel = require('../models/VaultModel');
+const { uploadToCloudinary } = require('../services/cloudinaryService');
 
 const addModel = async (req, res) => {
     try {
-        const {title, description, fileUrl} = req.body;
-        if (!title || !fileUrl) {
-            return res.status(400).json({error: 'Title and Url of a model are required!'});
+        const {title, description} = req.body;
+        if (!title) {
+            return res.status(400).json({error: 'Title of a model is required'});
+        }
+        if (!req.file) {
+            return res.status(400).json({error: 'No 3D file uploaded'});
         }
         const loggedUserId = req.user.userId;
+
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
 
         const newModel = new VaultModel({
             title,
             description,
-            fileUrl,
+            fileUrl: cloudinaryResult.secure_url,
             userId: loggedUserId,
             status: 'pending'
         });
