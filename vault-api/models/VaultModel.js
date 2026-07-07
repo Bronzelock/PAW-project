@@ -24,14 +24,11 @@ const vaultModelSchema = new mongoose.Schema({
         enum: ['pending', 'analyzed', 'error'],
         default: 'pending'
     },
-    metadata: {
-        dimensions: {
-            x: { type: Number },
-            y: { type: Number },
-            z: { type: Number }
-        },
-        isManifold: { type: Boolean },
-        volume_cm3: { type: Number }
+    volume: {
+        type: Number
+    },
+    dimensions: {
+        type: String
     }
 }, {
     timestamps: true

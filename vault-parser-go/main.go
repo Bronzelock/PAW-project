@@ -92,7 +92,7 @@ func analyzeModelHandler(w http.ResponseWriter, r *http.Request) {
 
 	dimensions := fmt.Sprintf("%.2fx%.2fx%.2f", maxX-minX, maxY-minY, maxZ-minZ)
 
-	fmt.Printf("Analiza zakończona! Objętość: %.2f, Wymiary: %s\n", volume, dimensions)
+	fmt.Printf("Analysis finished! Volume: %.2f, Dimensions: %s\n", volume, dimensions)
 
 	w.Header().Set("Content-Type", "application/json")
 

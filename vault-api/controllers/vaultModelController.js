@@ -13,13 +13,39 @@ const addModel = async (req, res) => {
         const loggedUserId = req.user.userId;
 
         const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+        const fileUrl = cloudinaryResult.secure_url;
+
+        let finalStatus = 'pending';
+        let volume = 0;
+        let dimensions = '';
+
+        try {
+            const goResponse = await fetch('http://localhost:8080/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileUrl: fileUrl })
+            });
+
+            if (goResponse.ok) {
+                const goData = await goResponse.json();
+                volume = goData.volume;
+                dimensions = goData.dimensions;
+                finalStatus = 'analyzed';
+            } else {
+                console.warn('Go server encountered an error, status set to pending');
+            }
+        } catch (goError) {
+            console.error('Connection error with go server:', goError.message);
+        }
 
         const newModel = new VaultModel({
             title,
             description,
             fileUrl: cloudinaryResult.secure_url,
             userId: loggedUserId,
-            status: 'pending'
+            status: finalStatus,
+            volume,
+            dimensions
         });
         await newModel.save()
         return res.status(201).json({message: 'Model created succeessfully'});
