@@ -1,20 +1,34 @@
 node_modules/
 
 .env
+.env.local
+.env.*
 
-npm-debug.log
-.DS_Store
-*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-.vscode/
-.idea/
+dist/
+build/
+dist-ssr/
+
+.vite/
+.eslintcache
 
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+*.test
+*.out
+
+.DS_Store
+Thumbs.db
 
 .vscode/
 .idea/
-.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
