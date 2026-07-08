@@ -10,7 +10,7 @@ const uploadToCloudinary = (fileBuffer, originalName) => {
     return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream({
             resource_type: 'raw',
-            public_id: `models/${Date.now()}_${originalName}`
+            public_id: `models/${originalName}`
         },
         (error, result) => {
             if (error) {
@@ -23,4 +23,18 @@ const uploadToCloudinary = (fileBuffer, originalName) => {
     });
 };
 
-module.exports = {uploadToCloudinary};
+const deleteFromCloudinary = async (cloudinaryId) => {
+    try {
+        if (!cloudinaryId) return null;
+
+        console.log(`Attempt to delete file with public_id: ${cloudinaryId}`);
+
+        const result = await cloudinary.uploader.destroy(cloudinaryId, { resource_type: 'raw' });
+        return result;
+
+    } catch (error) {
+        console.error('Cloudinary delete error:', error);
+        throw error;
+    }
+};
+module.exports = {uploadToCloudinary, deleteFromCloudinary};

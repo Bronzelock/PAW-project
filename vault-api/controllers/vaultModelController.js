@@ -1,5 +1,5 @@
 const VaultModel = require('../models/VaultModel');
-const { uploadToCloudinary } = require('../services/cloudinaryService');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../services/cloudinaryService');
 
 const addModel = async (req, res) => {
     try {
@@ -42,6 +42,7 @@ const addModel = async (req, res) => {
             title,
             description,
             fileUrl: cloudinaryResult.secure_url,
+            cloudinaryId: cloudinaryResult.public_id,
             userId: loggedUserId,
             status: finalStatus,
             volume,
@@ -79,6 +80,9 @@ const deleteModel = async (req, res) => {
         }
         if (!modelToDelete.userId.equals(loggedUserId)) {
             return res.status(403).json({error: 'Unathorized access for this action'});
+        }
+        if (modelToDelete.fileUrl) {
+            await deleteFromCloudinary(modelToDelete.cloudinaryId);
         }
         await VaultModel.findByIdAndDelete(modelId);
         return res.status(200).json({message: 'Model successfully removed'});

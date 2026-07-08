@@ -14,6 +14,9 @@ const vaultModelSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    cloudinaryId: {
+        type: String
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
