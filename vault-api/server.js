@@ -3,10 +3,12 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoute');
 const vaultModelsRoutes = require('./routes/vaultModelRoute');
+const cors = require('cors');
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 app.use('/auth', authRoutes);
 app.use('/models', vaultModelsRoutes)

@@ -1,55 +1,213 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-  const handleAuth = (e) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
+
+  const [models, setModels] = useState([]);
+
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [uploadFile, setUploadFile] = useState(null);
+
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  const getUserIdFromToken = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsLoggedIn(true);
+      setCurrentUserId(getUserIdFromToken(token));
+    }
+  }, []);
+
+const fetchModels = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://127.0.0.1:3000/models', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setModels(data);
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchModels();
+    }
+  }, [isLoggedIn]);
+
+  const handleAuth = async (e) => {
     e.preventDefault();
-    console.log("");
-    if (!isRegisterMode) setIsLoggedIn(true); 
+    setMessage('');
+    setIsError(false);
+
+    const endpoint = isRegisterMode ? '/auth/register' : '/auth/login';
+    const url = `http://127.0.0.1:3000${endpoint}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (isRegisterMode) {
+          setMessage('Account succesfully created.');
+          setIsError(false);
+          setIsRegisterMode(false);
+        } else {
+          localStorage.setItem('token', data.token);
+          setCurrentUserId(getUserIdFromToken(data.token));
+          setIsLoggedIn(true);
+          setEmail('');
+          setPassword('');
+        }
+      } else {
+        setMessage(data.error || 'Error occured.');
+        setIsError(true);
+      }
+    } catch (error) {
+      console.error("Connection error: ", error);
+      setMessage('Server connection error, check if node is running.');
+    }
   };
 
-  const handleUpload = () => {
-    console.log("");
+const handleUpload = async () => {
+    if (!uploadTitle || !uploadFile) {
+      alert("Title and file are required!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', uploadTitle);
+    formData.append('description', uploadDescription);
+    formData.append('file', uploadFile); 
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://127.0.0.1:3000/models', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (response.ok) {
+        alert("Model succesfully added!");
+        setUploadTitle('');
+        setUploadDescription('');
+        setUploadFile(null);
+        fetchModels();
+      } else {
+        const data = await response.json();
+        alert(`Błąd: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
   };
 
-  const handleDelete = () => {
-    console.log("");
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this model?")) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://127.0.0.1:3000/models/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        fetchModels();
+      } else {
+        alert("Error occured during deletion.");
+      }
+    } catch (error) {
+      console.error("Error during deletion:", error);
+    }
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="p-10 flex justify-center">
-        <div className="card bg-base-100 shadow-xl border" style={{ width: '400px' }}>
-          <div className="card-body">
-            <h2 className="text-2xl font-bold mb-4">
-              {isRegisterMode ? "Create Account" : "3D Vault Login"}
-            </h2>
-            
-            <form onSubmit={handleAuth}>
-              <p className="mb-1">Email</p>
-              <input type="email" className="input input-bordered mb-4" style={{ width: '100%' }} required />
+  const handleDownload = (fileUrl) => {
+    window.open(fileUrl, '_blank');
+  };
+
+    if (!isLoggedIn) {
+      return (
+        <div className="p-10 flex justify-center">
+          <div className="card bg-base-100 shadow-xl border" style={{ width: '400px' }}>
+            <div className="card-body">
+              <h2 className="text-2xl font-bold mb-4">
+                {isRegisterMode ? "Create Account" : "3D Vault Login"}
+              </h2>
               
-              <p className="mb-1">Password</p>
-              <input type="password" className="input input-bordered mb-6" style={{ width: '100%' }} required />
+              {message && (
+                <div className={`p-3 mb-4 rounded ${!isError ? 'bg-success text-success-content' : 'bg-error text-error-content'}`}>
+                  {message}
+                </div>
+              )}
               
-              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                {isRegisterMode ? "Register" : "Login"}
+              <form onSubmit={handleAuth}>
+                <p className="mb-1">Email</p>
+                <input 
+                  type="email" 
+                  className="input input-bordered mb-4" 
+                  style={{ width: '100%' }} 
+                  required 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                
+                <p className="mb-1">Password</p>
+                <input 
+                  type="password" 
+                  className="input input-bordered mb-6" 
+                  style={{ width: '100%' }} 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                
+                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                  {isRegisterMode ? "Register" : "Login"}
+                </button>
+              </form>
+
+              <button 
+                className="btn btn-ghost mt-4" 
+                onClick={() => {
+                  setIsRegisterMode(!isRegisterMode);
+                  setMessage('');
+                }}
+              >
+                {isRegisterMode ? "Switch to Login" : "Switch to Register"}
               </button>
-            </form>
-
-            <button 
-              className="btn btn-ghost mt-4" 
-              onClick={() => setIsRegisterMode(!isRegisterMode)}
-            >
-              {isRegisterMode ? "Switch to Login" : "Switch to Register"}
-            </button>
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   return (
     <div className="p-10">
@@ -57,16 +215,35 @@ function App() {
         
         <div className="flex justify-between mb-8">
           <h1 className="text-3xl font-bold text-primary">3D Models Repository</h1>
-          <button className="btn btn-error" onClick={() => setIsLoggedIn(false)}>Logout</button>
+          <button className="btn btn-error" onClick={() => {localStorage.removeItem('token'); setIsLoggedIn(false)}}>Logout</button>
         </div>
 
-        <div className="card bg-base-100 shadow border p-6 mb-8">
+<div className="card bg-base-100 shadow border p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">Upload New Model</h2>
-          <div className="flex gap-4">
-            <input type="text" placeholder="Title" className="input input-bordered" />
-            <input type="text" placeholder="Description" className="input input-bordered" />
-            <input type="file" accept=".stl" className="file-input file-input-bordered" />
-            <button className="btn btn-success" onClick={handleUpload}>Upload</button>
+          <div className="flex flex-col xl:flex-row gap-4 w-full">
+            <input 
+              type="text" 
+              placeholder="Title" 
+              className="input input-bordered flex-1" 
+              value={uploadTitle}
+              onChange={(e) => setUploadTitle(e.target.value)}
+            />
+            <input 
+              type="text" 
+              placeholder="Description" 
+              className="input input-bordered flex-1" 
+              value={uploadDescription}
+              onChange={(e) => setUploadDescription(e.target.value)}
+            />
+            <input 
+              type="file" 
+              accept=".stl" 
+              className="file-input file-input-bordered flex-1" 
+              onChange={(e) => setUploadFile(e.target.files[0])}
+            />
+            <button className="btn btn-success whitespace-nowrap" onClick={handleUpload}>
+              Upload
+            </button>
           </div>
         </div>
 
@@ -81,16 +258,47 @@ function App() {
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>Sample Gear</td>
-                <td><span className="badge badge-success">Analyzed</span></td>
-                <td>125.50 mm³</td>
-                <td>10x10x10</td>
-                <td>
-                  <button className="btn btn-sm btn-error" onClick={handleDelete}>Delete</button>
-                </td>
-              </tr>
+<tbody>
+              {models.length === 0 ? (
+                <tr><td colSpan="5" className="text-center">No models found in the repository.</td></tr>
+              ) : (
+                models.map((model) => {
+                  const authorId = model.userId?._id || model.userId;
+                  const authorEmail = model.userId?.email || 'Unknown User';
+                  const isOwner = authorId === currentUserId;
+
+                  return (
+                    <tr key={model._id}>
+                      <td>
+                        <div className="font-bold">{model.title}</div>
+                        <div className="text-xs opacity-50 mb-1">{model.description}</div>
+                        <div className="text-xs text-primary">By: {authorEmail}</div>
+                      </td>
+                      <td>
+                        <span className={`badge ${model.status === 'analyzed' ? 'badge-success' : 'badge-warning'} gap-2`}>
+                          {model.status}
+                        </span>
+                      </td>
+                      <td className="font-mono text-sm">
+                        {model.volume ? `${model.volume.toFixed(2)} mm³` : '-'}
+                      </td>
+                      <td className="font-mono text-sm text-info">
+                        {model.dimensions || '-'}
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <button className="btn btn-sm btn-info" onClick={() => handleDownload(model.fileUrl)}>Download</button>
+                          {isOwner ? (
+                            <button className="btn btn-sm btn-error" onClick={() => handleDelete(model._id)}>Delete</button>
+                          ) : (
+                            <span className="text-xs text-base-content/50"></span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
