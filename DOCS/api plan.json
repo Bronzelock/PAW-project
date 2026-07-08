@@ -1,21 +1,21 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Vault - Platforma Modeli 3D",
-    "description": "API do zarządzania katalogiem modeli 3D oraz uwierzytelniania użytkowników.",
+    "title": "3D Vault API",
+    "description": "API for managing 3D models repository and automated geometric analysis.",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost:3000/api/v1",
-      "description": "Serwer lokalny"
+      "url": "http://127.0.0.1:3000",
+      "description": "Local development server"
     }
   ],
   "paths": {
     "/auth/register": {
       "post": {
-        "summary": "Rejestracja nowego użytkownika",
-        "tags": ["Uwierzytelnianie"],
+        "summary": "Register a new user account",
+        "tags": ["Authentication"],
         "requestBody": {
           "required": true,
           "content": {
@@ -24,23 +24,23 @@
                 "type": "object",
                 "required": ["email", "password"],
                 "properties": {
-                  "email": { "type": "string", "example": "user@example.com" },
-                  "password": { "type": "string", "example": "MojeBezpieczneHaslo123" }
+                  "email": { "type": "string", "example": "engineer@example.com" },
+                  "password": { "type": "string", "example": "SecurePass123!" }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Użytkownik został pomyślnie zarejestrowany" },
-          "400": { "description": "Niepoprawne dane wejściowe (np. email już istnieje)" }
+          "201": { "description": "User registered successfully" },
+          "400": { "description": "Invalid input or email already exists" }
         }
       }
     },
     "/auth/login": {
       "post": {
-        "summary": "Logowanie użytkownika i pobranie tokenu JWT",
-        "tags": ["Uwierzytelnianie"],
+        "summary": "Authenticate user and receive JWT token",
+        "tags": ["Authentication"],
         "requestBody": {
           "required": true,
           "content": {
@@ -49,8 +49,8 @@
                 "type": "object",
                 "required": ["email", "password"],
                 "properties": {
-                  "email": { "type": "string", "example": "user@example.com" },
-                  "password": { "type": "string", "example": "MojeBezpieczneHaslo123" }
+                  "email": { "type": "string", "example": "engineer@example.com" },
+                  "password": { "type": "string", "example": "SecurePass123!" }
                 }
               }
             }
@@ -58,7 +58,7 @@
         },
         "responses": {
           "200": {
-            "description": "Zalogowano pomyślnie",
+            "description": "Successful login",
             "content": {
               "application/json": {
                 "schema": {
@@ -70,31 +70,22 @@
               }
             }
           },
-          "401": { "description": "Błędny login lub hasło" }
+          "401": { "description": "Invalid credentials" }
         }
       }
     },
     "/models": {
       "get": {
-        "summary": "Pobieranie listy modeli z opcjonalnym filtrowaniem",
-        "tags": ["Modele 3D"],
-        "parameters": [
-          {
-            "name": "title",
-            "in": "query",
-            "description": "Wyszukiwanie modeli po tytule",
-            "required": false,
-            "schema": { "type": "string" }
-          }
-        ],
+        "summary": "Get list of all 3D models",
+        "tags": ["3D Models"],
         "responses": {
           "200": {
-            "description": "Lista modeli została pobrana",
+            "description": "List of models retrieved",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/Model3D" }
+                  "items": { "$ref": "#/components/schemas/VaultModel" }
                 }
               }
             }
@@ -102,20 +93,20 @@
         }
       },
       "post": {
-        "summary": "Dodawanie nowego modelu (Wymaga tokenu)",
-        "tags": ["Modele 3D"],
+        "summary": "Upload and create a new 3D model",
+        "tags": ["3D Models"],
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["title", "description", "fileUrl"],
+                "required": ["title", "file"],
                 "properties": {
-                  "title": { "type": "string", "example": "Zębatka drukarki" },
-                  "description": { "type": "string", "example": "Część zamienna do drukarki Ender 3." },
-                  "fileUrl": { "type": "string", "example": "https://cloudinary.com/files/zebatka.stl" }
+                  "title": { "type": "string", "example": "Headphone Desk Mount" },
+                  "description": { "type": "string", "example": "Universal desk mount for audio accessories." },
+                  "file": { "type": "string", "format": "binary", "description": "The .stl 3D file to upload" }
                 }
               }
             }
@@ -123,35 +114,59 @@
         },
         "responses": {
           "201": {
-            "description": "Model dodany pomyślnie",
+            "description": "Model uploaded and analyzed successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Model3D" }
+                "schema": { "$ref": "#/components/schemas/VaultModel" }
               }
             }
           },
-          "401": { "description": "Brak tokenu JWT lub token niepoprawny" }
+          "400": { "description": "Missing title or file" },
+          "401": { "description": "Missing or invalid JWT token" }
         }
       }
     },
     "/models/{id}": {
+      "get": {
+        "summary": "Get a specific 3D model by ID",
+        "tags": ["3D Models"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0d1e" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Model details retrieved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VaultModel" }
+              }
+            }
+          },
+          "404": { "description": "Model not found" }
+        }
+      },
       "delete": {
-        "summary": "Usuwanie modelu o podanym ID (Wymaga tokenu)",
-        "tags": ["Modele 3D"],
+        "summary": "Delete a 3D model and its physical file",
+        "tags": ["3D Models"],
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Unikalny identyfikator modelu w MongoDB",
             "schema": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0d1e" }
           }
         ],
         "responses": {
-          "200": { "description": "Model został usunięty" },
-          "401": { "description": "Brak autoryzacji" },
-          "404": { "description": "Nie znaleziono modelu o podanym ID" }
+          "200": { "description": "Model and file removed successfully" },
+          "401": { "description": "Unauthorized token" },
+          "403": { "description": "Forbidden - You can only delete your own models" },
+          "404": { "description": "Model not found" }
         }
       }
     }
@@ -165,15 +180,28 @@
       }
     },
     "schemas": {
-      "Model3D": {
+      "User": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0d1e" },
-          "title": { "type": "string", "example": "Zębatka drukarki" },
-          "description": { "type": "string", "example": "Część zamienna do drukarki Ender 3." },
-          "fileUrl": { "type": "string", "example": "https://cloudinary.com/files/zebatka.stl" },
-          "userId": { "type": "string", "example": "6519999c4d5e6f7a8b9c0d1e" },
-          "createdAt": { "type": "string", "format": "date-time", "example": "2026-03-30T12:34:56.789Z" }
+          "_id": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0001" },
+          "email": { "type": "string", "example": "engineer@example.com" },
+          "passwordHash": { "type": "string", "example": "$2b$10$EixZaYVK1f..." },
+          "createdAt": { "type": "string", "format": "date-time", "example": "2026-07-02T18:00:00.000Z" }
+        }
+      },
+      "VaultModel": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0d1e" },
+          "title": { "type": "string", "example": "Headphone Desk Mount" },
+          "description": { "type": "string", "example": "Universal desk mount for audio accessories." },
+          "fileUrl": { "type": "string", "example": "https://res.cloudinary.com/.../models/mount.stl" },
+          "cloudinaryId": { "type": "string", "example": "models/mount.stl" },
+          "userId": { "type": "string", "example": "651a2b3c4d5e6f7a8b9c0001" },
+          "status": { "type": "string", "enum": ["pending", "analyzed"], "example": "analyzed" },
+          "volume": { "type": "number", "example": 35.4069, "description": "Calculated volume in mm³ (or generic units)" },
+          "dimensions": { "type": "string", "example": "45.50x120.00x80.20", "description": "Bounding box size (XxYxZ)" },
+          "createdAt": { "type": "string", "format": "date-time", "example": "2026-07-02T18:05:00.000Z" }
         }
       }
     }
