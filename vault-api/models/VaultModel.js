@@ -32,7 +32,11 @@ const vaultModelSchema = new mongoose.Schema({
     },
     dimensions: {
         type: String
-    }
+    },
+    likes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 }, {
     timestamps: true
 });

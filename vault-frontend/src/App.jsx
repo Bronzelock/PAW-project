@@ -20,6 +20,10 @@ function App() {
 
   const [previewModel, setPreviewModel] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
   const getUserIdFromToken = (token) => {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -152,9 +156,49 @@ const handleUpload = async () => {
     }
   };
 
+  const handleToggleLike = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://127.0.0.1:3000/models/${id}/like`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        fetchModels();
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+
   const handleDownload = (fileUrl) => {
     window.open(fileUrl, '_blank');
   };
+
+  const filteredModels = models
+    .filter((model) => {
+      const authorId = model.userId?._id || model.userId;
+      const likesArray = model.likes || [];
+
+      if (activeTab === 'mine' && authorId !== currentUserId) return false;
+      if (activeTab === 'liked' && !likesArray.includes(currentUserId)) return false;
+
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = model.title?.toLowerCase().includes(q);
+        const matchDesc = model.description?.toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc) return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'popular') {
+        return (b.likes?.length || 0) - (a.likes?.length || 0);
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
 
     if (!isLoggedIn) {
       return (
@@ -250,6 +294,50 @@ const handleUpload = async () => {
           </div>
         </div>
 
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+          <div role="tablist" className="tabs tabs-boxed">
+            <button 
+              role="tab" 
+              className={`tab ${activeTab === 'all' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('all')}
+            >
+              All Models ({models.length})
+            </button>
+            <button 
+              role="tab" 
+              className={`tab ${activeTab === 'mine' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('mine')}
+            >
+              My Models
+            </button>
+            <button 
+              role="tab" 
+              className={`tab ${activeTab === 'liked' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('liked')}
+            >
+              ♥ Liked
+            </button>
+          </div>
+
+          <div className="flex gap-3 w-full md:w-auto">
+            <input 
+              type="text" 
+              placeholder="Search by title or description..." 
+              className="input input-bordered input-sm md:w-64 flex-1"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <select 
+              className="select select-bordered select-sm"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="newest">Newest First</option>
+              <option value="popular">Most Popular (Likes)</option>
+            </select>
+          </div>
+        </div>
+
         <div className="card bg-base-100 shadow border overflow-hidden">
           <table className="table">
             <thead className="bg-base-200">
@@ -258,17 +346,20 @@ const handleUpload = async () => {
                 <th>Status</th>
                 <th>Volume</th>
                 <th>Dimensions</th>
+                <th>Likes</th>
                 <th>Action</th>
               </tr>
             </thead>
 <tbody>
               {models.length === 0 ? (
-                <tr><td colSpan="5" className="text-center">No models found in the repository.</td></tr>
+                <tr><td colSpan="6" className="text-center">No models found in the repository.</td></tr>
               ) : (
-                models.map((model) => {
+                filteredModels.map((model) => {
                   const authorId = model.userId?._id || model.userId;
                   const authorEmail = model.userId?.email || 'Unknown User';
                   const isOwner = authorId === currentUserId;
+                  const likesArray = model.likes || [];
+                  const isLikedByMe = likesArray.includes(currentUserId);
 
                   return (
                     <tr key={model._id}>
@@ -287,6 +378,14 @@ const handleUpload = async () => {
                       </td>
                       <td className="font-mono text-sm text-info">
                         {model.dimensions || '-'}
+                      </td>
+                      <td>
+                        <button 
+                          className={`btn btn-xs ${isLikedByMe ? 'btn-error text-white' : 'btn-ghost border border-base-content/20'}`}
+                          onClick={() => handleToggleLike(model._id)}
+                        >
+                          ♥ {likesArray.length}
+                        </button>
                       </td>
                       <td>
                         <div className="flex items-center gap-2">

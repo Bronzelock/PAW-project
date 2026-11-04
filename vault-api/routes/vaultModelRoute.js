@@ -14,5 +14,6 @@ router.get('/', vaultModelController.viewModels);
 router.post('/', verifyToken, upload.single('file'), vaultModelController.addModel);
 router.delete('/:id', verifyToken, vaultModelController.deleteModel);
 router.get('/:id', vaultModelController.viewModelById);
+router.post('/:id/like', verifyToken, vaultModelController.toggleLike);
 
 module.exports = router;

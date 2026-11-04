@@ -109,4 +109,33 @@ const viewModelById = async (req, res) => {
         return res.status(500).json({ error: 'Server error while fetching the model' });
     }
 };
-module.exports = {addModel, viewModels, deleteModel, viewModelById};
+const toggleLike = async (req, res) => {
+    try {
+        const modelId = req.params.id;
+        const userId = req.user.userId;
+
+        const model = await VaultModel.findById(modelId);
+        if (!model) {
+            return res.status(404).json({ error: 'Model not found' });
+        }
+
+        const alreadyLiked = model.likes.some(id => id.equals(userId));
+
+        if (alreadyLiked) {
+            model.likes = model.likes.filter(id => !id.equals(userId));
+        } else {
+            model.likes.push(userId);
+        }
+
+        await model.save();
+        return res.status(200).json({ 
+            message: alreadyLiked ? 'Model unliked' : 'Model liked', 
+            likesCount: model.likes.length,
+            likes: model.likes 
+        });
+    } catch (error) {
+        console.error('Like error:', error);
+        return res.status(500).json({ error: 'Server error while toggling like' });
+    }
+};
+module.exports = {addModel, viewModels, deleteModel, viewModelById, toggleLike};
