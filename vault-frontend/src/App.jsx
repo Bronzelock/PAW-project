@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import StlViewer from './StlViewer';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,6 +17,8 @@ function App() {
   const [uploadFile, setUploadFile] = useState(null);
 
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  const [previewModel, setPreviewModel] = useState(null);
 
   const getUserIdFromToken = (token) => {
     try {
@@ -288,6 +291,7 @@ const handleUpload = async () => {
                       <td>
                         <div className="flex items-center gap-2">
                           <button className="btn btn-sm btn-info" onClick={() => handleDownload(model.fileUrl)}>Download</button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => setPreviewModel(model)}>Preview 3D</button>
                           {isOwner ? (
                             <button className="btn btn-sm btn-error" onClick={() => handleDelete(model._id)}>Delete</button>
                           ) : (
@@ -302,7 +306,26 @@ const handleUpload = async () => {
             </tbody>
           </table>
         </div>
+          {previewModel && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="card bg-base-100 shadow-2xl border w-full max-w-2xl p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold">{previewModel.title}</h3>
+                    <p className="text-xs opacity-60">Dimensions: {previewModel.dimensions} | Volume: {previewModel.volume?.toFixed(2)} mm³</p>
+                  </div>
+                  <button className="btn btn-sm btn-circle btn-ghost" onClick={() => setPreviewModel(null)}>✕</button>
+                </div>
 
+              <StlViewer fileUrl={previewModel.fileUrl} />
+
+              <div className="mt-4 flex justify-end gap-2">
+                  <button className="btn btn-sm btn-info" onClick={() => handleDownload(previewModel.fileUrl)}>Download STL</button>
+                  <button className="btn btn-sm" onClick={() => setPreviewModel(null)}>Close</button>
+           </div>
+         </div>
+       </div>
+     )}
       </div>
     </div>
   );
